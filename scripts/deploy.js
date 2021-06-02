@@ -14,13 +14,11 @@ async function main() {
     await hre.run('compile');
 
     // We get the contract to deploy
-    const hkzac = await hre.ethers.getContractFactory("HKZAC");
-    // let minter = ethers.utils.getAddress("0x2871e89Cb92d2b6F3D6c78861e0951Ab5ED73Fc4")
-    // let burner = ethers.utils.getAddress("0xff637e695029bD4100DA2f8F1c4005B204705a00")
-    const anan = await hkzac.deploy(minter, burner);
-    await anan.deployed()
+    const hkzacContract = await hre.ethers.getContractFactory("HKZAC");
+    const hkzac = await hkzacContract.deploy();
+    await hkzac.deployed()
 
-    console.log("Anan deployed to:", anan.address);
+    console.log("ZA token deployed to:", hkzac.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

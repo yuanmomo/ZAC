@@ -42,16 +42,21 @@ library SafeMath {
  * @dev The Ownable contract has an owner address, and provides basic authorization control
  * functions, this simplifies the implementation of "user permissions".
  */
-contract Ownable {
+contract RoleControl {
+    // owner
     address public owner;
 
+    // issuer
+    address public issuer;
+
     /**
-      * @dev The Ownable constructor sets the original `owner` of the contract to the sender
+      * @dev The RoleControl constructor sets the original `owner` of the contract to the sender
       * account.
       * #update by ZA
       */
-    constructor() public {
+    constructor(address _issuer) public {
         owner = msg.sender;
+        issuer = _issuer;
     }
 
     /**
@@ -72,6 +77,23 @@ contract Ownable {
         }
     }
 
+    /**
+      * @dev Throws if called by any account other than the issuer.
+      */
+    modifier onlyIssuer() {
+        require(msg.sender == issuer);
+        _;
+    }
+
+    /**
+    * @dev Allows the current issuer to transfer control of the contract to a newIssuer.
+    * @param newIssuer The address to transfer ownership to.
+    */
+    function transferIssuer(address newIssuer) public onlyIssuer {
+        if (newIssuer != address(0)) {
+            issuer = newIssuer;
+        }
+    }
 }
 
 /**
@@ -81,10 +103,14 @@ contract Ownable {
  */
 contract ERC20Basic {
     uint public _totalSupply;
+
     function totalSupply() public constant returns (uint);
+
     function balanceOf(address who) public constant returns (uint);
+
     function transfer(address to, uint value) public;
-    event Transfer(address indexed from, address indexed to, uint value);
+
+    event Transfer(uint indexed txcount, address indexed from, address indexed to, uint value);
 }
 
 /**
@@ -93,8 +119,11 @@ contract ERC20Basic {
  */
 contract ERC20 is ERC20Basic {
     function allowance(address owner, address spender) public constant returns (uint);
+
     function transferFrom(address from, address to, uint value) public;
+
     function approve(address spender, uint value) public;
+
     event Approval(address indexed owner, address indexed spender, uint value);
 }
 
@@ -102,8 +131,11 @@ contract ERC20 is ERC20Basic {
  * @title Basic token
  * @dev Basic version of StandardToken, with no allowances.
  */
-contract BasicToken is Ownable, ERC20Basic {
+contract BasicToken is RoleControl, ERC20Basic {
     using SafeMath for uint;
+
+    // transaction count
+    uint public txIndex;
 
     mapping(address => uint) public balances;
 
@@ -140,10 +172,10 @@ contract BasicToken is Ownable, ERC20Basic {
         // }
         // Transfer(msg.sender, _to, sendAmount);
 
-
+        txIndex += 1;
         balances[msg.sender] = balances[msg.sender].sub(_value);
         balances[_to] = balances[_to].add(_value);
-        emit Transfer(msg.sender, _to, _value);
+        emit Transfer(txIndex, msg.sender, _to, _value);
     }
 
     /**
@@ -166,9 +198,9 @@ contract BasicToken is Ownable, ERC20Basic {
  */
 contract StandardToken is BasicToken, ERC20 {
 
-    mapping (address => mapping (address => uint)) public allowed;
+    mapping(address => mapping(address => uint)) public allowed;
 
-    uint public constant MAX_UINT = 2**256 - 1;
+    uint public constant MAX_UINT = 2 ** 256 - 1;
 
     /**
     * @dev Transfer tokens from one address to another
@@ -177,6 +209,7 @@ contract StandardToken is BasicToken, ERC20 {
     * @param _value uint the amount of tokens to be transferred
     */
     function transferFrom(address _from, address _to, uint _value) public onlyPayloadSize(3 * 32) {
+        txIndex += 1;
         uint _allowance = allowed[_from][msg.sender];
 
         // Check is not needed because sub(_allowance, _value) will already throw if this condition is not met
@@ -206,7 +239,7 @@ contract StandardToken is BasicToken, ERC20 {
         }
         balances[_from] = balances[_from].sub(_value);
         balances[_to] = balances[_to].add(_value);
-        emit Transfer(_from, _to, _value);
+        emit Transfer(txIndex, _from, _to, _value);
     }
 
     /**
@@ -243,7 +276,7 @@ contract StandardToken is BasicToken, ERC20 {
  * @title Pausable
  * @dev Base contract which allows children to implement an emergency stop mechanism.
  */
-contract Pausable is Ownable {
+contract Pausable is RoleControl {
     event Pause();
     event Unpause();
 
@@ -283,7 +316,7 @@ contract Pausable is Ownable {
     }
 }
 
-contract BlackList is Ownable, BasicToken {
+contract BlackList is RoleControl, BasicToken {
 
     /////// Getters to allow the same blacklist to be used also by other contracts (including upgraded Tether) ///////
     function getBlackListStatus(address _maker) external constant returns (bool) {
@@ -294,19 +327,19 @@ contract BlackList is Ownable, BasicToken {
         return owner;
     }
 
-    mapping (address => bool) public isBlackListed;
+    mapping(address => bool) public isBlackListed;
 
-    function addBlackList (address _evilUser) public onlyOwner {
+    function addBlackList(address _evilUser) public onlyOwner {
         isBlackListed[_evilUser] = true;
         emit AddedBlackList(_evilUser);
     }
 
-    function removeBlackList (address _clearedUser) public onlyOwner {
+    function removeBlackList(address _clearedUser) public onlyOwner {
         isBlackListed[_clearedUser] = false;
         emit RemovedBlackList(_clearedUser);
     }
 
-    function destroyBlackFunds (address _blackListedUser) public onlyOwner {
+    function destroyBlackFunds(address _blackListedUser) public onlyOwner {
         require(isBlackListed[_blackListedUser]);
         uint dirtyFunds = balanceOf(_blackListedUser);
         balances[_blackListedUser] = 0;
@@ -322,11 +355,13 @@ contract BlackList is Ownable, BasicToken {
 
 }
 
-contract UpgradedStandardToken is StandardToken{
+contract UpgradedStandardToken is StandardToken {
     // those methods are called by the legacy contract
     // and they must ensure msg.sender to be the contract address
     function transferByLegacy(address from, address to, uint value) public;
+
     function transferFromByLegacy(address sender, address from, address spender, uint value) public;
+
     function approveByLegacy(address from, address spender, uint value) public;
 }
 
@@ -345,7 +380,7 @@ contract ZAToken is Pausable, StandardToken, BlackList {
     // @param _name Token Name
     // @param _symbol Token symbol
     // @param _decimals Token decimals
-    function TetherToken(uint _initialSupply, string _name, string _symbol, uint _decimals) public {
+    constructor(uint _initialSupply, string _name, string _symbol, uint _decimals) public {
         _totalSupply = _initialSupply;
         name = _name;
         symbol = _symbol;
@@ -421,11 +456,11 @@ contract ZAToken is Pausable, StandardToken, BlackList {
     // these tokens are deposited into the owner address
     //
     // @param _amount Number of tokens to be issued
-    function issue(uint amount) public onlyOwner {
+    function issue(uint amount) public onlyIssuer {
         require(_totalSupply + amount > _totalSupply);
-        require(balances[owner] + amount > balances[owner]);
+        require(balances[issuer] + amount > balances[issuer]);
 
-        balances[owner] += amount;
+        balances[issuer] += amount;
         _totalSupply += amount;
         emit Issue(amount);
     }
@@ -435,12 +470,12 @@ contract ZAToken is Pausable, StandardToken, BlackList {
     // if the balance must be enough to cover the redeem
     // or the call will fail.
     // @param _amount Number of tokens to be issued
-    function redeem(uint amount) public onlyOwner {
+    function redeem(uint amount) public onlyIssuer {
         require(_totalSupply >= amount);
-        require(balances[owner] >= amount);
+        require(balances[issuer] >= amount);
 
         _totalSupply -= amount;
-        balances[owner] -= amount;
+        balances[issuer] -= amount;
         emit Redeem(amount);
     }
 
