@@ -48,8 +48,9 @@ contract Ownable {
     /**
       * @dev The Ownable constructor sets the original `owner` of the contract to the sender
       * account.
+      * @update by ZA
       */
-    function Ownable() public {
+    constructor() public {
         owner = msg.sender;
     }
 
@@ -107,8 +108,9 @@ contract BasicToken is Ownable, ERC20Basic {
     mapping(address => uint) public balances;
 
     // additional variables for use if transaction fees ever became necessary
-    uint public basisPointsRate = 0;
-    uint public maximumFee = 0;
+    // @update by ZA
+    // uint public basisPointsRate = 0;
+    // uint public maximumFee = 0;
 
     /**
     * @dev Fix for the ERC20 short address attack.
@@ -124,18 +126,24 @@ contract BasicToken is Ownable, ERC20Basic {
     * @param _value The amount to be transferred.
     */
     function transfer(address _to, uint _value) public onlyPayloadSize(2 * 32) {
-        uint fee = (_value.mul(basisPointsRate)).div(10000);
-        if (fee > maximumFee) {
-            fee = maximumFee;
-        }
-        uint sendAmount = _value.sub(fee);
+        // @update by ZA
+        // uint fee = (_value.mul(basisPointsRate)).div(10000);
+        // if (fee > maximumFee) {
+        //     fee = maximumFee;
+        // }
+        // uint sendAmount = _value.sub(fee);
+        // balances[msg.sender] = balances[msg.sender].sub(_value);
+        // balances[_to] = balances[_to].add(sendAmount);
+        // if (fee > 0) {
+        //     balances[owner] = balances[owner].add(fee);
+        //     Transfer(msg.sender, owner, fee);
+        // }
+        // Transfer(msg.sender, _to, sendAmount);
+
+
         balances[msg.sender] = balances[msg.sender].sub(_value);
-        balances[_to] = balances[_to].add(sendAmount);
-        if (fee > 0) {
-            balances[owner] = balances[owner].add(fee);
-            Transfer(msg.sender, owner, fee);
-        }
-        Transfer(msg.sender, _to, sendAmount);
+        balances[_to] = balances[_to].add(_value);
+        emit Transfer(msg.sender, _to, _value);
     }
 
     /**
@@ -169,26 +177,36 @@ contract StandardToken is BasicToken, ERC20 {
     * @param _value uint the amount of tokens to be transferred
     */
     function transferFrom(address _from, address _to, uint _value) public onlyPayloadSize(3 * 32) {
-        var _allowance = allowed[_from][msg.sender];
+        uint _allowance = allowed[_from][msg.sender];
 
         // Check is not needed because sub(_allowance, _value) will already throw if this condition is not met
         // if (_value > _allowance) throw;
 
-        uint fee = (_value.mul(basisPointsRate)).div(10000);
-        if (fee > maximumFee) {
-            fee = maximumFee;
-        }
+        // @update by ZA
+        // uint fee = (_value.mul(basisPointsRate)).div(10000);
+        // if (fee > maximumFee) {
+        //     fee = maximumFee;
+        // }
+        // if (_allowance < MAX_UINT) {
+        //     allowed[_from][msg.sender] = _allowance.sub(_value);
+        // }
+        // uint sendAmount = _value.sub(fee);
+        // balances[_from] = balances[_from].sub(_value);
+        // balances[_to] = balances[_to].add(sendAmount);
+        // if (fee > 0) {
+        //     balances[owner] = balances[owner].add(fee);
+        //     Transfer(_from, owner, fee);
+        // }
+        // Transfer(_from, _to, sendAmount);
+
+
+
         if (_allowance < MAX_UINT) {
             allowed[_from][msg.sender] = _allowance.sub(_value);
         }
-        uint sendAmount = _value.sub(fee);
         balances[_from] = balances[_from].sub(_value);
-        balances[_to] = balances[_to].add(sendAmount);
-        if (fee > 0) {
-            balances[owner] = balances[owner].add(fee);
-            Transfer(_from, owner, fee);
-        }
-        Transfer(_from, _to, sendAmount);
+        balances[_to] = balances[_to].add(_value);
+        emit Transfer(_from, _to, _value);
     }
 
     /**
@@ -205,7 +223,7 @@ contract StandardToken is BasicToken, ERC20 {
         require(!((_value != 0) && (allowed[msg.sender][_spender] != 0)));
 
         allowed[msg.sender][_spender] = _value;
-        Approval(msg.sender, _spender, _value);
+        emit Approval(msg.sender, _spender, _value);
     }
 
     /**
@@ -253,7 +271,7 @@ contract Pausable is Ownable {
      */
     function pause() onlyOwner whenNotPaused public {
         paused = true;
-        Pause();
+        emit Pause();
     }
 
     /**
@@ -261,7 +279,7 @@ contract Pausable is Ownable {
      */
     function unpause() onlyOwner whenPaused public {
         paused = false;
-        Unpause();
+        emit Unpause();
     }
 }
 
@@ -280,12 +298,12 @@ contract BlackList is Ownable, BasicToken {
 
     function addBlackList (address _evilUser) public onlyOwner {
         isBlackListed[_evilUser] = true;
-        AddedBlackList(_evilUser);
+        emit AddedBlackList(_evilUser);
     }
 
     function removeBlackList (address _clearedUser) public onlyOwner {
         isBlackListed[_clearedUser] = false;
-        RemovedBlackList(_clearedUser);
+        emit RemovedBlackList(_clearedUser);
     }
 
     function destroyBlackFunds (address _blackListedUser) public onlyOwner {
@@ -293,7 +311,7 @@ contract BlackList is Ownable, BasicToken {
         uint dirtyFunds = balanceOf(_blackListedUser);
         balances[_blackListedUser] = 0;
         _totalSupply -= dirtyFunds;
-        DestroyedBlackFunds(_blackListedUser, dirtyFunds);
+        emit DestroyedBlackFunds(_blackListedUser, dirtyFunds);
     }
 
     event DestroyedBlackFunds(address _blackListedUser, uint _balance);
@@ -387,7 +405,7 @@ contract ZAToken is Pausable, StandardToken, BlackList {
     function deprecate(address _upgradedAddress) public onlyOwner {
         deprecated = true;
         upgradedAddress = _upgradedAddress;
-        Deprecate(_upgradedAddress);
+        emit Deprecate(_upgradedAddress);
     }
 
     // deprecate current contract if favour of a new one
@@ -409,7 +427,7 @@ contract ZAToken is Pausable, StandardToken, BlackList {
 
         balances[owner] += amount;
         _totalSupply += amount;
-        Issue(amount);
+        emit Issue(amount);
     }
 
     // Redeem tokens.
@@ -423,19 +441,20 @@ contract ZAToken is Pausable, StandardToken, BlackList {
 
         _totalSupply -= amount;
         balances[owner] -= amount;
-        Redeem(amount);
+        emit Redeem(amount);
     }
 
-    function setParams(uint newBasisPoints, uint newMaxFee) public onlyOwner {
-        // Ensure transparency by hardcoding limit beyond which fees can never be added
-        require(newBasisPoints < 20);
-        require(newMaxFee < 50);
+    // @update by ZA
+    // function setParams(uint newBasisPoints, uint newMaxFee) public onlyOwner {
+    //     // Ensure transparency by hardcoding limit beyond which fees can never be added
+    //     require(newBasisPoints < 20);
+    //     require(newMaxFee < 50);
 
-        basisPointsRate = newBasisPoints;
-        maximumFee = newMaxFee.mul(10**decimals);
+    //     basisPointsRate = newBasisPoints;
+    //     maximumFee = newMaxFee.mul(10**decimals);
 
-        Params(basisPointsRate, maximumFee);
-    }
+    //     Params(basisPointsRate, maximumFee);
+    // }
 
     // Called when new token are issued
     event Issue(uint amount);
@@ -447,5 +466,6 @@ contract ZAToken is Pausable, StandardToken, BlackList {
     event Deprecate(address newAddress);
 
     // Called if contract ever adds fees
-    event Params(uint feeBasisPoints, uint maxFee);
+    // @update by ZA
+    // event Params(uint feeBasisPoints, uint maxFee);
 }
