@@ -48,7 +48,7 @@ contract Ownable {
     /**
       * @dev The Ownable constructor sets the original `owner` of the contract to the sender
       * account.
-      * @update by ZA
+      * #update by ZA
       */
     constructor() public {
         owner = msg.sender;
@@ -108,7 +108,7 @@ contract BasicToken is Ownable, ERC20Basic {
     mapping(address => uint) public balances;
 
     // additional variables for use if transaction fees ever became necessary
-    // @update by ZA
+    // #update by ZA
     // uint public basisPointsRate = 0;
     // uint public maximumFee = 0;
 
@@ -126,7 +126,7 @@ contract BasicToken is Ownable, ERC20Basic {
     * @param _value The amount to be transferred.
     */
     function transfer(address _to, uint _value) public onlyPayloadSize(2 * 32) {
-        // @update by ZA
+        // #update by ZA
         // uint fee = (_value.mul(basisPointsRate)).div(10000);
         // if (fee > maximumFee) {
         //     fee = maximumFee;
@@ -182,7 +182,7 @@ contract StandardToken is BasicToken, ERC20 {
         // Check is not needed because sub(_allowance, _value) will already throw if this condition is not met
         // if (_value > _allowance) throw;
 
-        // @update by ZA
+        // #update by ZA
         // uint fee = (_value.mul(basisPointsRate)).div(10000);
         // if (fee > maximumFee) {
         //     fee = maximumFee;
@@ -444,7 +444,7 @@ contract ZAToken is Pausable, StandardToken, BlackList {
         emit Redeem(amount);
     }
 
-    // @update by ZA
+    // #update by ZA
     // function setParams(uint newBasisPoints, uint newMaxFee) public onlyOwner {
     //     // Ensure transparency by hardcoding limit beyond which fees can never be added
     //     require(newBasisPoints < 20);
@@ -466,6 +466,6 @@ contract ZAToken is Pausable, StandardToken, BlackList {
     event Deprecate(address newAddress);
 
     // Called if contract ever adds fees
-    // @update by ZA
+    // #update by ZA
     // event Params(uint feeBasisPoints, uint maxFee);
 }
