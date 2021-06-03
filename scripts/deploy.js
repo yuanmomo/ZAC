@@ -14,11 +14,11 @@ async function main() {
     await hre.run('compile');
 
     // We get the contract to deploy
-    const hkzacContract = await hre.ethers.getContractFactory("ZAToken");
-    const hkzac = await hkzacContract.deploy(10000000000,"ZA Coin","HKDZ",2);
-    await hkzac.deployed()
+    const zacContract = await hre.ethers.getContractFactory("ZAToken");
+    const zac = await zacContract.connect().deploy(10000000000,"ZA Coin","ZACH",2);
+    await zac.deployed()
 
-    console.log("ZA token deployed to:", hkzac.address);
+    console.log("ZA token deployed to:", zac.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
