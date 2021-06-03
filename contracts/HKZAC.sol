@@ -2,7 +2,7 @@
  *Submitted for verification at Etherscan.io on 2017-11-28
 */
 
-pragma solidity ^0.4.17;
+pragma solidity ^0.4.21;
 
 /**
  * @title SafeMath
@@ -45,7 +45,6 @@ library SafeMath {
 contract RoleControl {
     // owner
     address public owner;
-
     // issuer
     address public issuer;
 
@@ -54,9 +53,9 @@ contract RoleControl {
       * account.
       * #update by ZA
       */
-    constructor(address _issuer) public {
+    function RoleControl() public {
         owner = msg.sender;
-        issuer = _issuer;
+        issuer = msg.sender;
     }
 
     /**
@@ -380,7 +379,7 @@ contract ZAToken is Pausable, StandardToken, BlackList {
     // @param _name Token Name
     // @param _symbol Token symbol
     // @param _decimals Token decimals
-    constructor(uint _initialSupply, string _name, string _symbol, uint _decimals) public {
+    function ZAToken(uint _initialSupply, string _name, string _symbol, uint _decimals) public {
         _totalSupply = _initialSupply;
         name = _name;
         symbol = _symbol;
