@@ -14,8 +14,8 @@ async function main() {
     await hre.run('compile');
 
     // We get the contract to deploy
-    const hkzacContract = await hre.ethers.getContractFactory("HKZAC");
-    const hkzac = await hkzacContract.deploy();
+    const hkzacContract = await hre.ethers.getContractFactory("ZAToken");
+    const hkzac = await hkzacContract.deploy(10000000000,"ZA Coin","HKDZ",2);
     await hkzac.deployed()
 
     console.log("ZA token deployed to:", hkzac.address);
