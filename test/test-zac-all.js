@@ -219,6 +219,33 @@ describe("Token contract", function () {
             expect(await zac.balanceOf(user2.address)).to.equal(tokenOfUser2);
         });
 
+        describe("Pause test", function () {
+            it("Only owner can call paused function", async function () {
+                // Transfer tokens from owner to cold
+                await expect(zac.connect(deployer).pause()).to.be.reverted;
+
+                await zac.connect(owner).pause()
+
+                expect(await zac.paused()).to.equal(true);
+            });
+
+            it("Transfer failed when contract is paused", async function () {
+                // Transfer tokens failed
+                await expect(
+                    zac.connect(user1).transfer(user2.address, 1 * 10 ^ decimal)
+                ).to.be.reverted;
+            });
+
+            it("Only owner can call unpause function", async function () {
+                // Transfer tokens from owner to cold
+                await expect(zac.connect(deployer).unpause()).to.be.reverted;
+
+                await zac.connect(owner).unpause()
+
+                expect(await zac.paused()).to.equal(false);
+            });
+        });
+
         it("Collect from users to hot", async function () {
             // Transfer tokens from owner to cold
             await zac.connect(user1).transfer(hot.address, user1Amount + user3ToUser1Amount);
@@ -231,4 +258,5 @@ describe("Token contract", function () {
             expect(await zac.balanceOf(user3.address)).to.equal(0);
         });
     });
+
 });
