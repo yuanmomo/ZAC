@@ -70,18 +70,20 @@ describe("Token contract", function () {
         // for it to be deployed(), which happens once its transaction has been mined.
         zac = await zacContract.deploy(initialSupply, name, symbol, decimal);
 
-        console.log("ZA token address: ", zac.address);
-        console.log("-------------------------------------");
-        console.log("deployer: ", deployer.address);
-        console.log("owner: ", owner.address);
-        console.log("issuer: ", issuer.address);
-        console.log("-------------------------------------");
-        console.log("cold: ", cold.address);
-        console.log("hot: ", hot.address);
-        console.log("-------------------------------------");
-        console.log("user1: ", user1.address);
-        console.log("user2: ", user2.address);
-        console.log("user3: ", user3.address);
+        console.log("\tZA token address: ", zac.address);
+        console.log("\t-------------------------------------");
+        console.log("\tdeployer: ", deployer.address);
+        console.log("\towner: ", owner.address);
+        console.log("\tissuer: ", issuer.address);
+        console.log("\t-------------------------------------");
+        console.log("\tcold: ", cold.address);
+        console.log("\thot: ", hot.address);
+        console.log("\t-------------------------------------");
+        console.log("\tuser1: ", user1.address);
+        console.log("\tuser2: ", user2.address);
+        console.log("\tuser3: ", user3.address);
+        console.log("");
+        console.log("");
     });
 
     // You can nest describe calls to create subsections.
@@ -96,10 +98,12 @@ describe("Token contract", function () {
             expect(await zac.issuer()).to.equal(deployer.address);
         });
 
-        it("Should assign the total supply of tokens to the owner", async function () {
-            const ownerBalance = await zac.balanceOf(owner.address);
-            expect(await zac.totalSupply()).to.equal(ownerBalance);
+        it("Each balance is 0", async function () {
             expect(await zac.totalSupply()).to.equal(initialSupply);
+            expect(await zac.balanceOf(owner.address)).to.equal(initialSupply);
+            expect(await zac.balanceOf(issuer.address)).to.equal(initialSupply);
+            expect(await zac.balanceOf(cold.address)).to.equal(initialSupply);
+            expect(await zac.balanceOf(hot.address)).to.equal(initialSupply);
         });
 
         it("Change owner and issuer to another", async function () {
