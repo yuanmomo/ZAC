@@ -109,7 +109,7 @@ contract ERC20Basic {
 
     function transfer(address to, uint value) public;
 
-    event Transfer(uint indexed txcount, address indexed from, address indexed to, uint value);
+    event Transfer(address indexed from, address indexed to, uint value);
 }
 
 /**
@@ -132,9 +132,6 @@ contract ERC20 is ERC20Basic {
  */
 contract BasicToken is RoleControl, ERC20Basic {
     using SafeMath for uint;
-
-    // transaction count
-    uint public txIndex;
 
     mapping(address => uint) public balances;
 
@@ -171,10 +168,9 @@ contract BasicToken is RoleControl, ERC20Basic {
         // }
         // Transfer(msg.sender, _to, sendAmount);
 
-        txIndex += 1;
         balances[msg.sender] = balances[msg.sender].sub(_value);
         balances[_to] = balances[_to].add(_value);
-        emit Transfer(txIndex, msg.sender, _to, _value);
+        emit Transfer(msg.sender, _to, _value);
     }
 
     /**
@@ -208,7 +204,6 @@ contract StandardToken is BasicToken, ERC20 {
     * @param _value uint the amount of tokens to be transferred
     */
     function transferFrom(address _from, address _to, uint _value) public onlyPayloadSize(3 * 32) {
-        txIndex += 1;
         uint _allowance = allowed[_from][msg.sender];
 
         // Check is not needed because sub(_allowance, _value) will already throw if this condition is not met
@@ -238,7 +233,7 @@ contract StandardToken is BasicToken, ERC20 {
         }
         balances[_from] = balances[_from].sub(_value);
         balances[_to] = balances[_to].add(_value);
-        emit Transfer(txIndex, _from, _to, _value);
+        emit Transfer(_from, _to, _value);
     }
 
     /**
