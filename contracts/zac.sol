@@ -136,9 +136,8 @@ contract BasicToken is RoleControl, ERC20Basic {
     mapping(address => uint) public balances;
 
     // additional variables for use if transaction fees ever became necessary
-    // #update by ZA
-    // uint public basisPointsRate = 0;
-    // uint public maximumFee = 0;
+    uint public basisPointsRate = 0;
+    uint public maximumFee = 0;
 
     /**
     * @dev Fix for the ERC20 short address attack.
@@ -154,23 +153,18 @@ contract BasicToken is RoleControl, ERC20Basic {
     * @param _value The amount to be transferred.
     */
     function transfer(address _to, uint _value) public onlyPayloadSize(2 * 32) {
-        // #update by ZA
-        // uint fee = (_value.mul(basisPointsRate)).div(10000);
-        // if (fee > maximumFee) {
-        //     fee = maximumFee;
-        // }
-        // uint sendAmount = _value.sub(fee);
-        // balances[msg.sender] = balances[msg.sender].sub(_value);
-        // balances[_to] = balances[_to].add(sendAmount);
-        // if (fee > 0) {
-        //     balances[owner] = balances[owner].add(fee);
-        //     Transfer(msg.sender, owner, fee);
-        // }
-        // Transfer(msg.sender, _to, sendAmount);
-
+        uint fee = (_value.mul(basisPointsRate)).div(10000);
+        if (fee > maximumFee) {
+            fee = maximumFee;
+        }
+        uint sendAmount = _value.sub(fee);
         balances[msg.sender] = balances[msg.sender].sub(_value);
-        balances[_to] = balances[_to].add(_value);
-        emit Transfer(msg.sender, _to, _value);
+        balances[_to] = balances[_to].add(sendAmount);
+        if (fee > 0) {
+            balances[owner] = balances[owner].add(fee);
+            emit Transfer(msg.sender, owner, fee);
+        }
+        emit Transfer(msg.sender, _to, sendAmount);
     }
 
     /**
@@ -209,31 +203,21 @@ contract StandardToken is BasicToken, ERC20 {
         // Check is not needed because sub(_allowance, _value) will already throw if this condition is not met
         // if (_value > _allowance) throw;
 
-        // #update by ZA
-        // uint fee = (_value.mul(basisPointsRate)).div(10000);
-        // if (fee > maximumFee) {
-        //     fee = maximumFee;
-        // }
-        // if (_allowance < MAX_UINT) {
-        //     allowed[_from][msg.sender] = _allowance.sub(_value);
-        // }
-        // uint sendAmount = _value.sub(fee);
-        // balances[_from] = balances[_from].sub(_value);
-        // balances[_to] = balances[_to].add(sendAmount);
-        // if (fee > 0) {
-        //     balances[owner] = balances[owner].add(fee);
-        //     Transfer(_from, owner, fee);
-        // }
-        // Transfer(_from, _to, sendAmount);
-
-
-
+        uint fee = (_value.mul(basisPointsRate)).div(10000);
+        if (fee > maximumFee) {
+            fee = maximumFee;
+        }
         if (_allowance < MAX_UINT) {
             allowed[_from][msg.sender] = _allowance.sub(_value);
         }
+        uint sendAmount = _value.sub(fee);
         balances[_from] = balances[_from].sub(_value);
-        balances[_to] = balances[_to].add(_value);
-        emit Transfer(_from, _to, _value);
+        balances[_to] = balances[_to].add(sendAmount);
+        if (fee > 0) {
+            balances[owner] = balances[owner].add(fee);
+            emit Transfer(_from, owner, fee);
+        }
+        emit Transfer(_from, _to, sendAmount);
     }
 
     /**
@@ -473,17 +457,16 @@ contract ZAToken is Pausable, StandardToken, BlackList {
         emit Redeem(amount);
     }
 
-    // #update by ZA
-    // function setParams(uint newBasisPoints, uint newMaxFee) public onlyOwner {
-    //     // Ensure transparency by hardcoding limit beyond which fees can never be added
-    //     require(newBasisPoints < 20);
-    //     require(newMaxFee < 50);
+    function setParams(uint newBasisPoints, uint newMaxFee) public onlyOwner {
+        // Ensure transparency by hardcoding limit beyond which fees can never be added
+        require(newBasisPoints < 20);
+        require(newMaxFee < 50);
 
-    //     basisPointsRate = newBasisPoints;
-    //     maximumFee = newMaxFee.mul(10**decimals);
+        basisPointsRate = newBasisPoints;
+        maximumFee = newMaxFee.mul(10 ** decimals);
 
-    //     Params(basisPointsRate, maximumFee);
-    // }
+        emit Params(basisPointsRate, maximumFee);
+    }
 
     // Called when new token are issued
     event Issue(uint amount);
@@ -495,6 +478,5 @@ contract ZAToken is Pausable, StandardToken, BlackList {
     event Deprecate(address newAddress);
 
     // Called if contract ever adds fees
-    // #update by ZA
-    // event Params(uint feeBasisPoints, uint maxFee);
+    event Params(uint feeBasisPoints, uint maxFee);
 }
