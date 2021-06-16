@@ -1,6 +1,6 @@
-# USDZ 稳定币
+# ZAC 稳定币
 
-USDZ 稳定币从 USDT 衍生而来，合约也是基于 USDT 在 ETH 上的合约源码修改而来。主要修改如下：
+ZAC 稳定币从 USDT 衍生而来，合约也是基于 USDT 在 ETH 上的合约源码修改而来。主要修改如下：
 
 1. 在 `Owner` 的基础上，增加一个 `Issuer` 角色；
 2. `decimal` 小数设置为 2；
